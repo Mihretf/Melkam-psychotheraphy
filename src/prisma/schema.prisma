@@ -1,0 +1,50 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String            @id @default(uuid())
+  firstName         String
+  lastName          String
+  email             String            @unique
+  password          String
+  role              Role              @default(PATIENT)
+  isVerified        Boolean           @default(false)
+  verificationToken String?           @unique
+  refreshToken      String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  therapistProfile  TherapistProfile?
+
+  @@map("users")
+}
+
+model TherapistProfile {
+  id              Int              @id @default(autoincrement())
+  userId          String           @unique
+  bio             String?
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  specializations Specialization[] @relation("SpecializationToTherapistProfile")
+
+  @@map("therapist_profiles")
+}
+
+model Specialization {
+  id               Int                @id @default(autoincrement())
+  name             String             @unique
+  therapistProfile TherapistProfile[] @relation("SpecializationToTherapistProfile")
+
+  @@map("specializations")
+}
+
+enum Role {
+  THERAPIST
+  PATIENT
+  ADMIN
+}
