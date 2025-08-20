@@ -1,0 +1,265 @@
+openapi: 3.0.0
+info:
+  title: Psychotherapy API
+  version: 1.0.0
+  description: API for managing users in the Psychotherapy platform with authentication and authorization.
+paths:
+  /api/v1/users/register:
+    post:
+      summary: Register a new user
+      description: Registers a new user with firstName, lastName, email, password, and role. Sends a verification OTP to the email.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName:
+                  type: string
+                  example: "John"
+                lastName:
+                  type: string
+                  example: "Doe"
+                email:
+                  type: string
+                  format: email
+                  example: "john.doe@example.com"
+                password:
+                  type: string
+                  example: "password123"
+                role:
+                  type: string
+                  enum: [THERAPIST, PATIENT, ADMIN]
+                  example: "PATIENT"
+      responses:
+        "201":
+          description: Verification OTP sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  verificationToken:
+                    type: string
+        "400":
+          description: Bad request (e.g., invalid input)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /api/v1/users/verify:
+    post:
+      summary: Verify user email with OTP
+      description: Verifies the user's email using the verification token and OTP sent via email.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+                  example: "some-uuid-token"
+                otp:
+                  type: string
+                  example: "123456"
+      responses:
+        "200":
+          description: Email verified successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        "400":
+          description: Invalid token or OTP
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /api/v1/users/login:
+    post:
+      summary: Log in a user
+      description: Authenticates a user with email and password, returning an access token and setting a refresh token cookie.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "john.doe@example.com"
+                password:
+                  type: string
+                  example: "password123"
+      responses:
+        "200":
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /api/v1/users/refresh:
+    post:
+      summary: Refresh access token
+      description: Refreshes the access token using the refresh token stored in the cookie.
+      responses:
+        "200":
+          description: New access token issued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+        "403":
+          description: Invalid or missing refresh token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /api/v1/users/forgot-password:
+    post:
+      summary: Initiate password reset
+      description: Sends a password reset OTP to the user's email.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "john.doe@example.com"
+      responses:
+        "200":
+          description: Reset OTP sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  verificationToken:
+                    type: string
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /api/v1/users/reset:
+    post:
+      summary: Reset user password
+      description: Resets the user's password using the verification token and OTP.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+                  example: "some-uuid-token"
+                otp:
+                  type: string
+                  example: "123456"
+                password:
+                  type: string
+                  example: "newpassword123"
+      responses:
+        "200":
+          description: Password reset successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        "400":
+          description: Invalid token or OTP
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /api/v1/users/admin:
+    get:
+      summary: Admin-only endpoint
+      description: Returns a message if the authenticated user has the ADMIN role.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Admin access granted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        "403":
+          description: Unauthorized (non-admin access)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Enter your JWT token in the format `Bearer <token>`
