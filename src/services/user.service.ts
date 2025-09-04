@@ -64,10 +64,10 @@ export class UserService {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) throw new Error("Invalid credentials");
 
-    const accessToken = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, {
+    const accessToken = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, {
       expiresIn: "1h",
     });
-    const refreshToken = jwt.sign({ id: user.id }, JWT_SECRET, {
+    const refreshToken = jwt.sign({ userId: user.id }, JWT_SECRET, {
       expiresIn: "7d",
     });
     await this.repository.updateRefreshToken(user.id, refreshToken);
@@ -78,7 +78,7 @@ export class UserService {
   async refreshToken(refreshToken: string) {
     try {
       const decoded: any = jwt.verify(refreshToken, JWT_SECRET);
-      const user = await this.repository.findByEmail(decoded.id);
+      const user = await this.repository.findByEmail(decoded.userId);
       if (!user || user.refreshToken !== refreshToken)
         throw new Error("Invalid token");
 
