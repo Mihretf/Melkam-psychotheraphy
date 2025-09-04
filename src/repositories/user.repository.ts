@@ -48,7 +48,7 @@ export class UserRepository {
 
   async updateVerificationById(id: string, verificationToken: string) {
     return await prisma.user.update({
-      where: { id },
+      where: { id: userId },
       data: { verificationToken },
     });
   }
